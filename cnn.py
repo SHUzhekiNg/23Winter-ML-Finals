@@ -12,13 +12,12 @@ import tqdm
 
 def load_images_and_labels(dataset_path):
     images = []
-    for root, dirs, files in os.walk(dataset_path):
-        for file in files:
-            image_path = os.path.join(root, file)
-            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            image = cv2.resize(image, (28, 28)) 
-            images.append(image)
-
+    files = sorted(os.listdir(dataset_path), key=lambda x: int(x.split('.')[0]))
+    for file in files:
+        image_path = os.path.join(dataset_path, file)
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        # image = cv2.resize(image, (28, 28)) 
+        images.append(image)
     return np.array(images)
 
 class SimpleCNN(nn.Module):
@@ -67,8 +66,8 @@ test_dataset = TensorDataset(X_test, y_test)
 
 # 创建数据加载器
 batch_size = 64
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+train_loader = DataLoader(train_dataset, batch_size=batch_size)
+test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
 # 初始化模型、损失函数和优化器
 lr = 0.01

@@ -6,13 +6,12 @@ from sklearn.metrics import accuracy_score
 
 def load_images_and_labels(dataset_path):
     images = []
-    for root, dirs, files in os.walk(dataset_path):
-        for file in files:
-            image_path = os.path.join(root, file)
-            image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-            image = cv2.resize(image, (28, 28)) 
-            images.append(image)
-
+    files = sorted(os.listdir(dataset_path), key=lambda x: int(x.split('.')[0]))
+    for file in files:
+        image_path = os.path.join(dataset_path, file)
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        # image = cv2.resize(image, (28, 28)) 
+        images.append(image)
     return np.array(images)
 
 # 加载MNIST数据集
@@ -25,7 +24,7 @@ color_images = load_images_and_labels('dataset/MNIST_color/testset/img')
 # all_images = np.concatenate((mnist_images, color_images))
 # all_labels = np.concatenate((mnist_labels, color_labels))
 
-y_binary = np.loadtxt('dataset/MNIST/mnist_dataset/less_train_labs.txt')
+y_binary = np.loadtxt('dataset/MNIST/mnist_dataset/train_labs.txt') # train_labs less_train_labs
 y_color = np.loadtxt('dataset/MNIST_color/testset/test_labs.txt')
 # 划分数据集
 
