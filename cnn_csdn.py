@@ -20,24 +20,68 @@ def load_images_and_labels(dataset_path):
     return np.array(images)
 
 
+def add_data(X, y):
+    # 0 for rotation 90, 180, 270
+    indices = (y == 0).nonzero().squeeze()
+    X_train_y0 = X[indices]
+    X_train_y0_rotated1 = torch.rot90(X_train_y0, k=1, dims=(2, 3))
+    X_train_y0_rotated2 = torch.rot90(X_train_y0, k=2, dims=(2, 3))
+    X_train_y0_rotated3 = torch.rot90(X_train_y0, k=-1, dims=(2, 3))
+    X = torch.cat([X, X_train_y0_rotated1, X_train_y0_rotated2, X_train_y0_rotated3], dim=0)
+    y = torch.cat([y, torch.zeros((3*indices.shape[0]), dtype=torch.long)], dim=0)
+
+    # # 6 for rotation 180 as 9
+    # indices = (y == 6).nonzero().squeeze()
+    # X_train_y0 = X[indices]
+    # X_train_y0_rotated2 = torch.rot90(X_train_y0, k=2, dims=(2, 3))
+    # X = torch.cat([X, X_train_y0_rotated2], dim=0)
+    # y = torch.cat([y, torch.ones((indices.shape[0]), dtype=torch.long)*9], dim=0)
+
+    # # 9 for rotation 180 as 6
+    # indices = (y == 9).nonzero().squeeze()
+    # X_train_y0 = X[indices]
+    # X_train_y0_rotated2 = torch.rot90(X_train_y0, k=2, dims=(2, 3))
+    # X = torch.cat([X, X_train_y0_rotated2], dim=0)
+    # y = torch.cat([y, torch.ones((indices.shape[0]), dtype=torch.long)*6], dim=0)
+
+    # 8 for rotation 180 as 8
+    indices = (y == 8).nonzero().squeeze()
+    X_train_y0 = X[indices]
+    X_train_y0_rotated2 = torch.rot90(X_train_y0, k=2, dims=(2, 3))
+    X = torch.cat([X, X_train_y0_rotated2], dim=0)
+    y = torch.cat([y, torch.ones((indices.shape[0]), dtype=torch.long)*8], dim=0)
+
+    # # 1 for rotation 180 as 1
+    # indices = (y == 1).nonzero().squeeze()
+    # X_train_y0 = X[indices]
+    # X_train_y0_rotated2 = torch.rot90(X_train_y0, k=2, dims=(2, 3))
+    # X = torch.cat([X, X_train_y0_rotated2], dim=0)
+    # y = torch.cat([y, torch.ones((indices.shape[0]), dtype=torch.long)], dim=0)
+    return X, y
+
 mnist_images = load_images_and_labels('dataset/MNIST/mnist_dataset/train')
 color_images = load_images_and_labels('dataset/MNIST_color/testset/img')
 
 y_binary = np.loadtxt('dataset/MNIST/mnist_dataset/less_train_labs.txt',dtype=np.int64) # less_train_labs
 y_color = np.loadtxt('dataset/MNIST_color/testset/test_labs.txt',dtype=np.int64)
 
-X_train = torch.tensor(mnist_images[y_binary[:,0]].reshape(-1, 1, 28, 28),dtype=torch.float32) # [y_binary[:,0]]
+X_train = torch.tensor(mnist_images[y_binary[:,0]].reshape(-1, 1, 28, 28),dtype=torch.float32)
 y_train = torch.tensor(y_binary[:,1],dtype=torch.long)
 
 X_test = torch.tensor(color_images.reshape(-1, 1, 28, 28),dtype=torch.float32)
 y_test = torch.tensor(y_color[:,1],dtype=torch.long)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+X_train, y_train = add_data(X_train, y_train)
+# X_train = torch.cat([X_train, X_train], dim=0)
+# y_train = torch.cat([y_train, y_train], dim=0)
 train_data = TensorDataset(X_train, y_train)
 test_data = TensorDataset(X_test, y_test)
 
-train_loader = DataLoader(train_data, batch_size=64)
-test_loader = DataLoader(test_data, batch_size=64)
+batch_size = 64
+train_loader = DataLoader(train_data, batch_size=batch_size)
+test_loader = DataLoader(test_data, batch_size=batch_size)
  
 train_data_size = len(train_data)
 test_data_size = len(test_data)
@@ -102,3 +146,29 @@ if __name__ == '__main__':
                 total += target.size(0)
                 correct += (predict == target).sum().item()
             print(f"第{i+1}轮，模型测试时准确率为: %.4f" % (correct / total))
+
+    print("----EVAL ALL----")
+    # 初始化每个类别的样本数和正确分类的样本数
+    class_correct = [0] * 10
+    class_total = [0] * 10
+
+    # test
+    with torch.no_grad(): 
+        for data in test_loader:
+            input, target = data
+            input = input.cuda()
+            target = target.cuda()
+            output = model(input)
+            probability, predict = torch.max(output.data, dim=1)
+            
+            # 统计每个类别的样本数和正确分类的样本数
+            total += target.size(0)
+            correct += (predict == target).sum().item()
+
+            for i in range(10):
+                class_total[i] += (target == i).sum().item()
+                class_correct[i] += (predict == target)[target == i].sum().item()
+
+    # 输出每个类别的准确率
+    for i in range(10):
+        print(f"类别 {i} 的准确率为: %.4f" % (class_correct[i] / class_total[i]))
