@@ -6,9 +6,11 @@ import cv2
 from matplotlib import pyplot as plt
 from torchvision.datasets import MNIST
 from torchvision import transforms
+from PIL import Image
 from torch.utils.data import DataLoader, TensorDataset
 from torch import nn
 import torch.nn.functional as f
+import random
  
 def load_images_and_labels(dataset_path):
     images = []
@@ -59,6 +61,27 @@ def add_data(X, y):
     # y = torch.cat([y, torch.ones((indices.shape[0]), dtype=torch.long)], dim=0)
     return X, y
 
+class CustomTransforms:
+    def __init__(self):
+        # self.transforms = transforms.Compose([
+        #     transforms.RandomApply([transforms.RandomRotation(degrees=(-10, 10))], p=0.25), # , resample=Image.BICUBIC
+        #     transforms.RandomApply([transforms.RandomAffine(degrees=0, translate=(0, 0), scale=(1.0, 1.0), shear=(-2, 2))], p=0.25),
+        #     transforms.RandomApply([transforms.RandomPerspective(distortion_scale=0.3, p=1.0, interpolation=Image.BICUBIC)], p=0.25),
+        #     transforms.RandomApply([transforms.RandomAffine(degrees=0, scale=(1.0, 1.0), shear=(-3, 3))], p=0.25),
+        # ])
+        self.trans_list = []
+        # self.trans_list.append(transforms.RandomRotation(degrees=(-5, 5)))
+        # self.trans_list.append(transforms.RandomAffine(degrees=0, translate=(0, 0), scale=(0.9, 1.1), shear=(0, 0)))
+        self.trans_list.append(transforms.RandomPerspective(distortion_scale=0.2, p=1.1, interpolation=Image.BICUBIC))
+        # self.trans_list.append(transforms.RandomAffine(degrees=0, scale=(1.0, 1.0), shear=(-3, 3)))
+
+    def __call__(self, image_tensor):
+        image_pil = transforms.ToPILImage()(image_tensor.squeeze(0).cpu())
+        # transformed_image_pil = self.transforms(image_pil)
+        transformed_image_pil = self.trans_list[random.randint(0,len(self.trans_list)-1)](image_pil)
+        return transforms.ToTensor()(transformed_image_pil).unsqueeze(0)
+
+    
 mnist_images = load_images_and_labels('dataset/MNIST/mnist_dataset/train')
 color_images = load_images_and_labels('dataset/MNIST_color/testset/img')
 
@@ -73,7 +96,18 @@ y_test = torch.tensor(y_color[:,1],dtype=torch.long)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-X_train, y_train = add_data(X_train, y_train)
+# # 创建自定义的图像变换对象
+# custom_transforms = CustomTransforms()
+# for i in range(0, 2001):
+#     # idx = random.randint(0, X_train.shape[0]-1)
+#     img = X_train[i]
+#     y_idx = y_train[i].unsqueeze(0)
+#     X_train = torch.cat([X_train, custom_transforms(img)], dim=0)
+#     y_train = torch.cat([y_train, y_idx], dim=0)
+
+
+
+# X_train, y_train = add_data(X_train, y_train)
 # X_train = torch.cat([X_train, X_train], dim=0)
 # y_train = torch.cat([y_train, y_train], dim=0)
 train_data = TensorDataset(X_train, y_train)
@@ -110,7 +144,7 @@ class Model(nn.Module):
         return output
  
  
-learn_rate = 0.01 
+learn_rate = 0.003
 model = Model()
 model = model.cuda()
 criterion = nn.CrossEntropyLoss()
