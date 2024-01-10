@@ -48,8 +48,8 @@ class CustomTransforms:
         # ])
         self.trans_list = []
         # self.trans_list.append(transforms.RandomRotation(degrees=(-5, 5)))
-        # self.trans_list.append(transforms.RandomAffine(degrees=0, translate=(0, 0), scale=(0.9, 1.1), shear=(0, 0)))
-        self.trans_list.append(transforms.RandomPerspective(distortion_scale=0.2, p=1.1, interpolation=Image.BICUBIC))
+        self.trans_list.append(transforms.RandomAffine(degrees=0, translate=(0, 0), scale=(0.9, 1.1), shear=(0, 0)))
+        # self.trans_list.append(transforms.RandomPerspective(distortion_scale=0.3, p=1.1, interpolation=Image.BICUBIC))
         # self.trans_list.append(transforms.RandomAffine(degrees=0, scale=(1.0, 1.0), shear=(-3, 3)))
 
     def __call__(self, image_tensor):
@@ -66,8 +66,9 @@ y_test = torch.tensor(y_color[:,1],dtype=torch.long)
 custom_transforms = CustomTransforms()
 for i in range(0, 2001):
     # idx = random.randint(0, X_train.shape[0]-1)
-    img = X_train[i]
-    y_idx = y_train[i].unsqueeze(0)
+    idx = i
+    img = X_train[idx]
+    y_idx = y_train[idx].unsqueeze(0)
     X_train = torch.cat([X_train, custom_transforms(img)], dim=0)
     y_train = torch.cat([y_train, y_idx], dim=0)
 
