@@ -18,6 +18,7 @@ def load_images_and_labels(dataset_path):
     for file in files:
         image_path = os.path.join(dataset_path, file)
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        image = cv2.resize(image, (24, 24)) 
         images.append(image)
     return np.array(images)
 
@@ -88,10 +89,10 @@ color_images = load_images_and_labels('dataset/MNIST_color/testset/img')
 y_binary = np.loadtxt('dataset/MNIST/mnist_dataset/less_train_labs.txt',dtype=np.int64) # less_train_labs
 y_color = np.loadtxt('dataset/MNIST_color/testset/test_labs.txt',dtype=np.int64)
 
-X_train = torch.tensor(mnist_images[y_binary[:,0]].reshape(-1, 1, 28, 28),dtype=torch.float32)
+X_train = torch.tensor(mnist_images[y_binary[:,0]].reshape(-1, 1, 24, 24),dtype=torch.float32)
 y_train = torch.tensor(y_binary[:,1],dtype=torch.long)
 
-X_test = torch.tensor(color_images.reshape(-1, 1, 28, 28),dtype=torch.float32)
+X_test = torch.tensor(color_images.reshape(-1, 1, 24, 24),dtype=torch.float32)
 y_test = torch.tensor(y_color[:,1],dtype=torch.long)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -108,15 +109,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # HOG特征提取
 def hog_features(images):
     hog_features_list = []
-    hog = cv2.HOGDescriptor((28, 28), (14, 14), (2, 2), (7, 7), 9)
+    hog = cv2.HOGDescriptor((24, 24), (12, 12), (2, 2), (4, 4), 9)
     for img in images:
-        img = np.reshape(img, (28, 28)).astype(np.uint8)
+        img = np.reshape(img, (24, 24)).astype(np.uint8)
         hog_features = hog.compute(img)
         hog_features_list.append(hog_features.flatten())
     return np.array(hog_features_list)
 
-X_train_hog = hog_features(X_train.numpy()).reshape(-1, 1, 48, 48)# (-1, 1, 18, 18)
-X_test_hog = hog_features(X_test.numpy()).reshape(-1, 1, 48, 48)
+X_train_hog = hog_features(X_train.numpy()).reshape(-1, 1, 63, 63)# (-1, 1, 18, 18)
+X_test_hog = hog_features(X_test.numpy()).reshape(-1, 1, 63, 63)
 X_train = torch.tensor(X_train_hog, dtype=torch.float32)
 X_test = torch.tensor(X_test_hog, dtype=torch.float32)
 # X_train, y_train = add_data(X_train, y_train)
@@ -141,7 +142,7 @@ class Model(nn.Module):
         self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
         self.pooling = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.fc1 = nn.Linear(32 * 12 * 12, 512) # 32*7*7 32*4*4 32*12*12
+        self.fc1 = nn.Linear(32 * 15 * 15, 512) # 32*7*7 32*4*4 32*12*12
         self.fc2 = nn.Linear(512, 10)
  
     def forward(self, x):
