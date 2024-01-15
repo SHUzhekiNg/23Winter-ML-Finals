@@ -14,7 +14,7 @@ def load_images_and_labels(dataset_path):
     for file in files:
         image_path = os.path.join(dataset_path, file)
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-        image = cv2.resize(image, (32, 32)) 
+        image = cv2.resize(image, (24, 24)) 
         images.append(image)
     return np.array(images)
 
@@ -32,18 +32,18 @@ y_binary = np.loadtxt('dataset/MNIST/mnist_dataset/less_train_labs.txt',dtype=np
 y_color = np.loadtxt('dataset/MNIST_color/testset/test_labs.txt',dtype=np.int64)
 # 划分数据集
 
-X_train = mnist_images[y_binary[:,0].astype(int)].reshape(-1, 32*32)
+X_train = mnist_images[y_binary[:,0].astype(int)].reshape(-1, 24*24)
 y_train = y_binary[:,1]
 
-X_test = color_images.reshape(-1, 32*32)
+X_test = color_images.reshape(-1, 24*24)
 y_test = y_color[:,1]
 
 # HOG特征提取
 def hog_features(images):
     hog_features_list = []
-    hog = cv2.HOGDescriptor((32, 32), (16, 16), (4, 4), (4, 4), 9)
+    hog = cv2.HOGDescriptor((24, 24), (12, 12), (2, 2), (4, 4), 9)
     for img in images:
-        img = np.reshape(img, (32, 32))
+        img = np.reshape(img, (24, 24))
         hog_features = hog.compute(img)
         hog_features_list.append(hog_features.flatten())
     return np.array(hog_features_list)

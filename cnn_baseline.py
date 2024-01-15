@@ -136,3 +136,30 @@ for i in range(epoch):  # 训练和测试进行5轮
     batch_losses, step = train() 
     # 模型测试
     test(i)
+
+print("----EVAL ALL----")
+    # 初始化每个类别的样本数和正确分类的样本数
+class_correct = [0] * 10
+class_total = [0] * 10
+correct = 0 
+total = 0 
+# test
+with torch.no_grad(): 
+    for data in test_loader:
+        input, target = data
+        input = input.cuda()
+        target = target.cuda()
+        output = model(input)
+        probability, predict = torch.max(output.data, dim=1)
+        
+        # 统计每个类别的样本数和正确分类的样本数
+        total += target.size(0)
+        correct += (predict == target).sum().item()
+
+        for i in range(10):
+            class_total[i] += (target == i).sum().item()
+            class_correct[i] += (predict == target)[target == i].sum().item()
+
+# 输出每个类别的准确率
+for i in range(10):
+    print(f"类别 {i} 的准确率为: %.4f" % (class_correct[i] / class_total[i]))

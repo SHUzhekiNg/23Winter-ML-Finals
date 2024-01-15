@@ -2,7 +2,7 @@ import os
 import cv2
 import numpy as np
 from sklearn import svm
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, classification_report
 from torchvision import transforms
 import random
 from PIL import Image
@@ -32,11 +32,11 @@ y_binary = np.loadtxt('dataset/MNIST/mnist_dataset/less_train_labs.txt',dtype=np
 y_color = np.loadtxt('dataset/MNIST_color/testset/test_labs.txt',dtype=np.int64)
 # 划分数据集
 
-# X_train = mnist_images[y_binary[:,0].astype(int)].reshape(-1, 28*28)
-# y_train = y_binary[:,1]
+X_train = mnist_images[y_binary[:,0].astype(int)].reshape(-1, 28*28)
+y_train = y_binary[:,1]
 
-# X_test = color_images.reshape(-1, 28*28)
-# y_test = y_color[:,1]
+X_test = color_images.reshape(-1, 28*28)
+y_test = y_color[:,1]
 
 class CustomTransforms:
     def __init__(self):
@@ -58,25 +58,25 @@ class CustomTransforms:
         transformed_image_pil = self.trans_list[random.randint(0,len(self.trans_list)-1)](image_pil)
         return transforms.ToTensor()(transformed_image_pil).unsqueeze(0)
 
-X_train = torch.tensor(mnist_images[y_binary[:,0]].reshape(-1, 1, 28, 28),dtype=torch.float32)
-y_train = torch.tensor(y_binary[:,1],dtype=torch.long)
-X_test = torch.tensor(color_images.reshape(-1, 1, 28, 28),dtype=torch.float32)
-y_test = torch.tensor(y_color[:,1],dtype=torch.long)
+# X_train = torch.tensor(mnist_images[y_binary[:,0]].reshape(-1, 1, 28, 28),dtype=torch.float32)
+# y_train = torch.tensor(y_binary[:,1],dtype=torch.long)
+# X_test = torch.tensor(color_images.reshape(-1, 1, 28, 28),dtype=torch.float32)
+# y_test = torch.tensor(y_color[:,1],dtype=torch.long)
 
-custom_transforms = CustomTransforms()
-for i in range(0, 2001):
-    # idx = random.randint(0, X_train.shape[0]-1)
-    idx = i
-    img = X_train[idx]
-    y_idx = y_train[idx].unsqueeze(0)
-    X_train = torch.cat([X_train, custom_transforms(img)], dim=0)
-    y_train = torch.cat([y_train, y_idx], dim=0)
+# custom_transforms = CustomTransforms()
+# for i in range(0, 2001):
+#     # idx = random.randint(0, X_train.shape[0]-1)
+#     idx = i
+#     img = X_train[idx]
+#     y_idx = y_train[idx].unsqueeze(0)
+#     X_train = torch.cat([X_train, custom_transforms(img)], dim=0)
+#     y_train = torch.cat([y_train, y_idx], dim=0)
 
-X_train = X_train.squeeze().view(-1,784).numpy()
-X_test = X_test.squeeze().view(-1,784).numpy()
-y_train = y_train.squeeze().numpy()
-y_test = y_test.squeeze().numpy()
-print(X_train.shape[0], y_train.shape[0])
+# X_train = X_train.squeeze().view(-1,784).numpy()
+# X_test = X_test.squeeze().view(-1,784).numpy()
+# y_train = y_train.squeeze().numpy()
+# y_test = y_test.squeeze().numpy()
+# print(X_train.shape[0], y_train.shape[0])
 # 创建SVM模型
 svm_model = svm.SVC(kernel='rbf')
 
@@ -89,3 +89,6 @@ y_pred_svm = svm_model.predict(X_test)
 # 评估准确性
 accuracy_svm = accuracy_score(y_test, y_pred_svm)
 print(f"SVM Accuracy: {accuracy_svm}")
+
+class_accuracy = classification_report(y_test, y_pred_svm, digits=4)
+print(f"Class-wise Accuracy:\n{class_accuracy}")
